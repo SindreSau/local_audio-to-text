@@ -1,0 +1,10 @@
+# all typical dotfiles
+.*
+
+# IDE files
+.idea
+.vscode
+
+# data and summary files
+data/*
+summaries/*
