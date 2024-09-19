@@ -5,6 +5,9 @@
 .idea
 .vscode
 
+# python cache
+__pycache__
+
 # data and summary files
 data/*
 summaries/*
