@@ -11,3 +11,6 @@ __pycache__
 # data and summary files
 data/*
 summaries/*
+
+# Explicitly allow file
+!data/DataScience staff meeting Sep 14 2022.mp3

@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 import subprocess
+import os
 import ollama
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
@@ -21,6 +22,10 @@ available_models = [
 
 # Global pipeline variable
 pipe = None
+
+
+def format_date():
+    return datetime.now().strftime("%M_%H_%d_%m_%Y")
 
 
 def load_model(model_id: str) -> None:
@@ -51,18 +56,32 @@ def transcribe_audio(audio_path: str, model_id: str = "openai/whisper-small") ->
 
     # Check if file format is not wav or mp3
     if audio_path.split(".")[-1] not in ["wav", "mp3"]:
+        print("Converting audio file to mp3 format...")
         # Convert the audio file to mp3
         file_name = audio_path.split(".")[0]
         subprocess.run(["ffmpeg", "-i", audio_path, f"{file_name}.mp3"])
         audio_path = f"{file_name}.mp3"
 
     transcription = pipe(audio_path)
+    print(f"Transcription complete: {transcription['text']}")
+
+    # Save the transcription to a text file
+    os.makedirs("./transcriptions", exist_ok=True)
+    audio_file_name = audio_path.split("/")[-1].split(".")[0]
+    # Pretty timeformat for logging
+    now = format_date()
+    with open(
+        f"./transcriptions/{now+f'_{audio_file_name}_transcription.txt'}",
+        "w",
+    ) as f:
+        f.write(transcription["text"])
+
     return transcription["text"]
 
 
 def summarize_with_ollama(text: str) -> dict:
     system_prompt = """You are an expert summarizer. Your task is to provide a concise summary of the given text. 
-    The summary should capture the main points and key information.
+    The summary should capture the main points and important information and should be in english with markdown formatting.
     You must return your response in a JSON format with a suitable short title and a markdown summary.
     The JSON structure should look like this: 
     {
@@ -103,8 +122,9 @@ def summarize_with_ollama(text: str) -> dict:
 
 
 def save_summary(summary: dict) -> str:
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    file_path = f"./summaries/{timestamp+'_'+summary['title']}.md"
+    now = format_date()
+    os.makedirs("./summaries", exist_ok=True)
+    file_path = f"./summaries/{now+'_'+summary['title']}.md"
     with open(file_path, "w") as f:
         f.write(summary["summary"])
     return file_path
